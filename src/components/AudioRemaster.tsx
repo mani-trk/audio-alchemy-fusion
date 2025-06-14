@@ -9,6 +9,7 @@ import AudioUpload from '@/components/AudioUpload';
 import AudioControls from '@/components/AudioControls';
 import ProcessingStatus from '@/components/ProcessingStatus';
 import AudioSpectrum from '@/components/AudioSpectrum';
+import AudioComparison from '@/components/AudioComparison';
 
 const AudioRemaster = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -120,6 +121,13 @@ const AudioRemaster = () => {
           </CardContent>
         </Card>
       </div>
+
+      {audioFile && (
+        <AudioComparison 
+          originalFile={audioFile}
+          isProcessed={!!processedAudio}
+        />
+      )}
 
       {audioFile && (
         <Card className="bg-slate-800/50 border-slate-600/50 shadow-xl hover:shadow-2xl transition-all duration-300">
