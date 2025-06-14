@@ -9,18 +9,31 @@ interface AudioUploadProps {
 
 const AudioUpload: React.FC<AudioUploadProps> = ({ onFileUpload }) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
+    console.log('Files dropped:', acceptedFiles);
     if (acceptedFiles.length > 0) {
-      onFileUpload(acceptedFiles[0]);
+      const file = acceptedFiles[0];
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      onFileUpload(file);
     }
   }, [onFileUpload]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     accept: {
       'audio/*': ['.mp3', '.mp4', '.wav', '.flac', '.aac', '.m4a']
     },
-    maxFiles: 1
+    maxFiles: 1,
+    maxSize: 100 * 1024 * 1024 // 100MB limit
   });
+
+  React.useEffect(() => {
+    if (fileRejections.length > 0) {
+      console.log('File rejections:', fileRejections);
+      fileRejections.forEach(rejection => {
+        console.log('Rejected file:', rejection.file.name, 'Errors:', rejection.errors);
+      });
+    }
+  }, [fileRejections]);
 
   return (
     <div
@@ -47,8 +60,18 @@ const AudioUpload: React.FC<AudioUploadProps> = ({ onFileUpload }) => {
           <p className="text-sm text-gray-400 mt-2">
             Drag & drop or click to select (MP3, MP4, WAV, FLAC, AAC, M4A)
           </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Maximum file size: 100MB
+          </p>
         </div>
       </div>
+      {fileRejections.length > 0 && (
+        <div className="mt-4 p-3 bg-red-600/20 border border-red-600/30 rounded-lg">
+          <p className="text-red-400 text-sm">
+            File upload failed. Please check file format and size.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

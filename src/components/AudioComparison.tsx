@@ -25,69 +25,86 @@ const AudioComparison: React.FC<AudioComparisonProps> = ({ originalFile, isProce
   });
 
   useEffect(() => {
-    drawWaveform(originalCanvasRef.current, 'original');
-    if (isProcessed) {
-      drawWaveform(processedCanvasRef.current, 'processed');
+    if (originalFile) {
+      console.log('Drawing original waveform for:', originalFile.name);
+      drawWaveform(originalCanvasRef.current, 'original');
+      if (isProcessed) {
+        console.log('Drawing processed waveform');
+        drawWaveform(processedCanvasRef.current, 'processed');
+      }
     }
   }, [originalFile, isProcessed]);
 
   const drawWaveform = (canvas: HTMLCanvasElement | null, type: 'original' | 'processed') => {
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    const centerY = height / 2;
-
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, width, height);
-
-    // Generate waveform data
-    const samples = 200;
-    const waveformData = [];
-    
-    for (let i = 0; i < samples; i++) {
-      const baseAmplitude = type === 'original' ? 0.6 : 0.8;
-      const noise = type === 'original' ? 0.3 : 0.1;
-      const amplitude = baseAmplitude + (Math.random() - 0.5) * noise;
-      waveformData.push(amplitude * Math.sin((i / samples) * Math.PI * 8) * (height / 3));
+    if (!canvas) {
+      console.log('Canvas not available for', type);
+      return;
     }
 
-    // Draw waveform
-    const barWidth = width / samples;
-    
-    for (let i = 0; i < samples; i++) {
-      const barHeight = Math.abs(waveformData[i]);
-      const x = i * barWidth;
-      
-      // Create gradient based on type
-      const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
-      if (type === 'original') {
-        gradient.addColorStop(0, '#ef4444');
-        gradient.addColorStop(0.5, '#f97316');
-        gradient.addColorStop(1, '#ef4444');
-      } else {
-        gradient.addColorStop(0, '#10b981');
-        gradient.addColorStop(0.5, '#06d6a0');
-        gradient.addColorStop(1, '#10b981');
+    try {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.log('Canvas context not available for', type);
+        return;
       }
-      
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x, centerY - barHeight, barWidth - 1, barHeight * 2);
-    }
 
-    // Add frequency overlay for processed version
-    if (type === 'processed') {
-      ctx.globalAlpha = 0.3;
-      ctx.fillStyle = '#06d6a0';
-      for (let i = 0; i < samples; i += 10) {
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerY = height / 2;
+
+      // Clear canvas
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+
+      // Generate waveform data
+      const samples = 200;
+      const waveformData = [];
+      
+      for (let i = 0; i < samples; i++) {
+        const baseAmplitude = type === 'original' ? 0.6 : 0.8;
+        const noise = type === 'original' ? 0.3 : 0.1;
+        const amplitude = baseAmplitude + (Math.random() - 0.5) * noise;
+        waveformData.push(amplitude * Math.sin((i / samples) * Math.PI * 8) * (height / 3));
+      }
+
+      // Draw waveform
+      const barWidth = width / samples;
+      
+      for (let i = 0; i < samples; i++) {
+        const barHeight = Math.abs(waveformData[i]);
         const x = i * barWidth;
-        const overlayHeight = Math.random() * 20 + 5;
-        ctx.fillRect(x, centerY - overlayHeight, barWidth * 2, overlayHeight * 2);
+        
+        // Create gradient based on type
+        const gradient = ctx.createLinearGradient(0, centerY - barHeight, 0, centerY + barHeight);
+        if (type === 'original') {
+          gradient.addColorStop(0, '#ef4444');
+          gradient.addColorStop(0.5, '#f97316');
+          gradient.addColorStop(1, '#ef4444');
+        } else {
+          gradient.addColorStop(0, '#10b981');
+          gradient.addColorStop(0.5, '#06d6a0');
+          gradient.addColorStop(1, '#10b981');
+        }
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, centerY - barHeight, barWidth - 1, barHeight * 2);
       }
-      ctx.globalAlpha = 1;
+
+      // Add frequency overlay for processed version
+      if (type === 'processed') {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#06d6a0';
+        for (let i = 0; i < samples; i += 10) {
+          const x = i * barWidth;
+          const overlayHeight = Math.random() * 20 + 5;
+          ctx.fillRect(x, centerY - overlayHeight, barWidth * 2, overlayHeight * 2);
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      console.log('Successfully drew waveform for', type);
+    } catch (error) {
+      console.error('Error drawing waveform for', type, ':', error);
     }
   };
 
@@ -178,7 +195,7 @@ const AudioComparison: React.FC<AudioComparisonProps> = ({ originalFile, isProce
                 <span className="text-xs text-slate-500 italic">(Preview after processing)</span>
               )}
             </div>
-            <div className={`bg-slate-800/50 rounded-lg p-4 border border-slate-600/30 ${!isProcessed ? 'opacity-50' : ''}`}>
+            <div className={`bg-slate-800/50 rounded-lg p-4 border border-slate-600/30 relative ${!isProcessed ? 'opacity-50' : ''}`}>
               <canvas
                 ref={processedCanvasRef}
                 width={400}
@@ -186,7 +203,7 @@ const AudioComparison: React.FC<AudioComparisonProps> = ({ originalFile, isProce
                 className="w-full h-24 rounded"
               />
               {!isProcessed && (
-                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 rounded-lg">
+                <div className="absolute inset-4 flex items-center justify-center bg-slate-900/80 rounded-lg">
                   <span className="text-slate-400 text-sm">Process audio to see enhancement</span>
                 </div>
               )}
