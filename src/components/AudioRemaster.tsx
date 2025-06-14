@@ -8,8 +8,6 @@ import AudioControls from '@/components/AudioControls';
 import ProcessingStatus from '@/components/ProcessingStatus';
 import AudioSpectrum from '@/components/AudioSpectrum';
 import AudioComparison from '@/components/AudioComparison';
-// @ts-ignore
-import lamejs from 'lamejs';
 
 const MAX_OUTPUT_SIZE = 15 * 1024 * 1024; // 15MB
 
@@ -41,6 +39,51 @@ const AudioRemaster = () => {
       title: "Audio File Uploaded",
       description: `${file.name} is ready for remastering`,
     });
+  };
+
+  const encodeToMp3 = async (audioBuffer: AudioBuffer, bitrate: number): Promise<Blob> => {
+    try {
+      // Dynamic import for better compatibility
+      const { Mp3Encoder } = await import('@breezystack/lamejs');
+      
+      const channels = Math.min(audioBuffer.numberOfChannels, 2);
+      const sampleRate = audioBuffer.sampleRate;
+      const left = audioBuffer.getChannelData(0);
+      const right = channels === 2 ? audioBuffer.getChannelData(1) : left;
+      
+      // Convert Float32Array to Int16Array
+      const leftBuffer = new Int16Array(left.length);
+      const rightBuffer = new Int16Array(right.length);
+      
+      for (let i = 0; i < left.length; i++) {
+        leftBuffer[i] = Math.max(-32768, Math.min(32767, left[i] * 32768));
+        rightBuffer[i] = Math.max(-32768, Math.min(32767, right[i] * 32768));
+      }
+      
+      const mp3encoder = new Mp3Encoder(channels, sampleRate, bitrate);
+      const mp3Data = [];
+      const blockSize = 1152;
+      
+      for (let i = 0; i < leftBuffer.length; i += blockSize) {
+        const leftChunk = leftBuffer.subarray(i, i + blockSize);
+        const rightChunk = rightBuffer.subarray(i, i + blockSize);
+        const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+        if (mp3buf.length > 0) {
+          mp3Data.push(new Uint8Array(mp3buf));
+        }
+      }
+      
+      const endBuf = mp3encoder.flush();
+      if (endBuf.length > 0) {
+        mp3Data.push(new Uint8Array(endBuf));
+      }
+      
+      return new Blob(mp3Data, { type: 'audio/mp3' });
+    } catch (error) {
+      console.error('MP3 encoding failed:', error);
+      // Fallback to WAV if MP3 encoding fails
+      return bufferToWave(audioBuffer);
+    }
   };
 
   const processAudio = async (file: File): Promise<{url: string, blob: Blob}> => {
@@ -101,47 +144,17 @@ const AudioRemaster = () => {
       source.start();
       const renderedBuffer = await offlineContext.startRendering();
 
-      // Encode as MP3 with lamejs if format === 'mp3'
+      // Encode based on format setting
+      let blob: Blob;
       if (audioSettings.format === 'mp3') {
-        // Only mono or stereo supported for mp3
-        const channels = Math.min(renderedBuffer.numberOfChannels, 2);
-        const samples = renderedBuffer.length;
-        const sampleRate = renderedBuffer.sampleRate;
-        // Collect channel data
-        const left = renderedBuffer.getChannelData(0);
-        const right = channels === 2 ? renderedBuffer.getChannelData(1) : left;
-        // Lamejs needs Int16Array
-        function floatTo16BitPCM(input: Float32Array): Int16Array {
-          const output = new Int16Array(input.length);
-          for (let i = 0; i < input.length; i++) {
-            const s = Math.max(-1, Math.min(1, input[i]));
-            output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-          }
-          return output;
-        }
-        const leftPCM = floatTo16BitPCM(left);
-        const rightPCM = floatTo16BitPCM(right);
-
-        const mp3Encoder = new lamejs.Mp3Encoder(channels, sampleRate, audioSettings.bitrate);
-        const blockSize = 1152;
-        let mp3Data = [];
-        for (let i = 0; i < samples; i += blockSize) {
-          const leftChunk = leftPCM.subarray(i, i + blockSize);
-          const rightChunk = channels === 2 ? rightPCM.subarray(i, i + blockSize) : leftChunk;
-          const mp3buf = mp3Encoder.encodeBuffer(leftChunk, rightChunk);
-          if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf));
-        }
-        const endBuf = mp3Encoder.flush();
-        if (endBuf.length > 0) mp3Data.push(new Uint8Array(endBuf));
-        const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
-        const url = URL.createObjectURL(mp3Blob);
-        return { url, blob: mp3Blob };
+        blob = await encodeToMp3(renderedBuffer, audioSettings.bitrate);
       } else {
-        // fallback: WAV for now, as mp4/aac is not supported in-browser
-        const blob = await bufferToWave(renderedBuffer);
-        const url = URL.createObjectURL(blob);
-        return { url, blob };
+        // Fallback to WAV
+        blob = await bufferToWave(renderedBuffer);
       }
+
+      const url = URL.createObjectURL(blob);
+      return { url, blob };
     } catch (error) {
       console.error('Audio processing failed:', error);
       // Fallback: just return the original file URL
@@ -276,7 +289,7 @@ const AudioRemaster = () => {
       }
       const link = document.createElement('a');
       link.href = processedAudio;
-      const ext = audioSettings.format === 'mp3' ? 'mp3' : 'wav'; // fallback: .wav
+      const ext = audioSettings.format === 'mp3' ? 'mp3' : 'wav';
       link.download = `remastered_${audioFile.name.replace(/\.[^/.]+$/, '')}.${ext}`;
       document.body.appendChild(link);
       link.click();
