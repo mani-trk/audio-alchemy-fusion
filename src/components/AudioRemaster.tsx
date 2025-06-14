@@ -1,14 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Upload, Download, Play, Pause, Settings, Zap, Music, Headphones, Sparkles } from 'lucide-react';
+import { Download, Settings, Upload, Zap, Music, Headphones, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AudioUpload from '@/components/AudioUpload';
 import AudioControls from '@/components/AudioControls';
 import ProcessingStatus from '@/components/ProcessingStatus';
 import AudioSpectrum from '@/components/AudioSpectrum';
 import AudioComparison from '@/components/AudioComparison';
+// @ts-ignore
+import lamejs from 'lamejs';
+
+const MAX_OUTPUT_SIZE = 15 * 1024 * 1024; // 15MB
 
 const AudioRemaster = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
@@ -16,6 +19,7 @@ const AudioRemaster = () => {
   const [processingStage, setProcessingStage] = useState('');
   const [progress, setProgress] = useState(0);
   const [processedAudio, setProcessedAudio] = useState<string | null>(null);
+  const [processedAudioBlob, setProcessedAudioBlob] = useState<Blob | null>(null);
   const [audioSettings, setAudioSettings] = useState({
     bitrate: 320,
     format: 'mp3',
@@ -30,6 +34,7 @@ const AudioRemaster = () => {
     console.log('File uploaded:', file.name, file.size, file.type);
     setAudioFile(file);
     setProcessedAudio(null);
+    setProcessedAudioBlob(null);
     setProgress(0);
     setProcessingStage('');
     toast({
@@ -38,7 +43,7 @@ const AudioRemaster = () => {
     });
   };
 
-  const processAudio = async (file: File): Promise<string> => {
+  const processAudio = async (file: File): Promise<{url: string, blob: Blob}> => {
     console.log('Starting audio processing for:', file.name);
     
     try {
@@ -84,31 +89,63 @@ const AudioRemaster = () => {
         }
       }
 
-      // Convert back to blob
+      // Render processedBuffer to PCM
       const offlineContext = new OfflineAudioContext(
         processedBuffer.numberOfChannels,
         processedBuffer.length,
         processedBuffer.sampleRate
       );
-      
       const source = offlineContext.createBufferSource();
       source.buffer = processedBuffer;
       source.connect(offlineContext.destination);
       source.start();
-      
       const renderedBuffer = await offlineContext.startRendering();
-      
-      // Create blob from processed audio
-      const blob = await bufferToWave(renderedBuffer);
-      const url = URL.createObjectURL(blob);
-      
-      console.log('Audio processing completed, URL created:', url);
-      return url;
-      
+
+      // Encode as MP3 with lamejs if format === 'mp3'
+      if (audioSettings.format === 'mp3') {
+        // Only mono or stereo supported for mp3
+        const channels = Math.min(renderedBuffer.numberOfChannels, 2);
+        const samples = renderedBuffer.length;
+        const sampleRate = renderedBuffer.sampleRate;
+        // Collect channel data
+        const left = renderedBuffer.getChannelData(0);
+        const right = channels === 2 ? renderedBuffer.getChannelData(1) : left;
+        // Lamejs needs Int16Array
+        function floatTo16BitPCM(input: Float32Array): Int16Array {
+          const output = new Int16Array(input.length);
+          for (let i = 0; i < input.length; i++) {
+            const s = Math.max(-1, Math.min(1, input[i]));
+            output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          return output;
+        }
+        const leftPCM = floatTo16BitPCM(left);
+        const rightPCM = floatTo16BitPCM(right);
+
+        const mp3Encoder = new lamejs.Mp3Encoder(channels, sampleRate, audioSettings.bitrate);
+        const blockSize = 1152;
+        let mp3Data = [];
+        for (let i = 0; i < samples; i += blockSize) {
+          const leftChunk = leftPCM.subarray(i, i + blockSize);
+          const rightChunk = channels === 2 ? rightPCM.subarray(i, i + blockSize) : leftChunk;
+          const mp3buf = mp3Encoder.encodeBuffer(leftChunk, rightChunk);
+          if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf));
+        }
+        const endBuf = mp3Encoder.flush();
+        if (endBuf.length > 0) mp3Data.push(new Uint8Array(endBuf));
+        const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+        const url = URL.createObjectURL(mp3Blob);
+        return { url, blob: mp3Blob };
+      } else {
+        // fallback: WAV for now, as mp4/aac is not supported in-browser
+        const blob = await bufferToWave(renderedBuffer);
+        const url = URL.createObjectURL(blob);
+        return { url, blob };
+      }
     } catch (error) {
       console.error('Audio processing failed:', error);
       // Fallback: just return the original file URL
-      return URL.createObjectURL(file);
+      return { url: URL.createObjectURL(file), blob: file };
     }
   };
 
@@ -168,6 +205,7 @@ const AudioRemaster = () => {
     setIsProcessing(true);
     setProgress(0);
     setProcessedAudio(null);
+    setProcessedAudioBlob(null);
 
     const stages = [
       { name: 'Analyzing audio signature...', duration: 1000 },
@@ -191,15 +229,28 @@ const AudioRemaster = () => {
       }
 
       // Actually process the audio
-      const processedUrl = await processAudio(audioFile);
-      setProcessedAudio(processedUrl);
+      const { url, blob } = await processAudio(audioFile);
+
+      if (blob.size > MAX_OUTPUT_SIZE) {
+        setProcessingStage('');
+        setIsProcessing(false);
+        toast({
+          title: "Output File Too Large",
+          description: "Remastered file is larger than 15MB. Please use a shorter or lower-bitrate audio.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setProcessedAudio(url);
+      setProcessedAudioBlob(blob);
       setProcessingStage('Complete');
       setIsProcessing(false);
 
       console.log('Remastering completed successfully');
       toast({
         title: "Remastering Complete!",
-        description: "Your audio has been enhanced with studio-grade quality",
+        description: `Your audio has been enhanced and saved as .${audioSettings.format.toUpperCase()}`,
       });
     } catch (error) {
       console.error('Remastering failed:', error);
@@ -214,18 +265,26 @@ const AudioRemaster = () => {
   };
 
   const handleDownload = () => {
-    if (processedAudio && audioFile) {
-      console.log('Starting download of processed audio');
+    if (processedAudio && processedAudioBlob && audioFile) {
+      if (processedAudioBlob.size > MAX_OUTPUT_SIZE) {
+        toast({
+          title: "File Too Large",
+          description: "Output file is greater than 15MB. Please re-encode with lower quality or use a shorter input.",
+          variant: "destructive"
+        });
+        return;
+      }
       const link = document.createElement('a');
       link.href = processedAudio;
-      link.download = `remastered_${audioFile.name.replace(/\.[^/.]+$/, '')}.wav`;
+      const ext = audioSettings.format === 'mp3' ? 'mp3' : 'wav'; // fallback: .wav
+      link.download = `remastered_${audioFile.name.replace(/\.[^/.]+$/, '')}.${ext}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
       toast({
         title: "Download Started",
-        description: "Your remastered audio is being downloaded",
+        description: `Your remastered audio (${audioSettings.format.toUpperCase()}) is being downloaded`,
       });
     } else {
       console.log('No processed audio available for download');
@@ -371,7 +430,7 @@ const AudioRemaster = () => {
                 </div>
                 <div className="bg-slate-700/50 p-6 rounded-2xl border border-slate-600/30 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 shadow-lg">
                   <div className="text-purple-400 font-semibold text-sm mb-1">Format</div>
-                  <div className="text-white text-xl font-bold">WAV</div>
+                  <div className="text-white text-xl font-bold">{audioSettings.format === 'mp3' ? 'MP3' : 'WAV'}</div>
                 </div>
                 <div className="bg-slate-700/50 p-6 rounded-2xl border border-slate-600/30 hover:border-emerald-500/50 transition-all duration-300 hover:scale-105 shadow-lg">
                   <div className="text-emerald-400 font-semibold text-sm mb-1">Quality</div>

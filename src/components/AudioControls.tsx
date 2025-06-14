@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -48,20 +47,27 @@ const AudioControls: React.FC<AudioControlsProps> = ({ settings, onSettingsChang
       <div className="space-y-4">
         <Label className="text-white text-sm font-medium">Output Format</Label>
         <div className="flex gap-2">
-          {['mp3', 'mp4'].map((format) => (
-            <Button
-              key={format}
-              onClick={() => updateSetting('format', format)}
-              variant={settings.format === format ? 'default' : 'outline'}
-              className={`${
-                settings.format === format
-                  ? 'bg-purple-600 hover:bg-purple-700'
-                  : 'border-slate-600 text-gray-300 hover:bg-slate-700'
-              }`}
-            >
-              {format.toUpperCase()}
-            </Button>
-          ))}
+          <Button
+            key="mp3"
+            onClick={() => updateSetting('format', 'mp3')}
+            variant={settings.format === 'mp3' ? 'default' : 'outline'}
+            className={`${
+              settings.format === 'mp3'
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'border-slate-600 text-gray-300 hover:bg-slate-700'
+            }`}
+          >
+            MP3
+          </Button>
+          <Button
+            key="mp4"
+            // mp4/aac encoding not supported in-browser: so disabled for now
+            variant="outline"
+            className="border-slate-600 text-gray-400 cursor-not-allowed opacity-50"
+            disabled
+          >
+            MP4 (coming soon)
+          </Button>
         </div>
       </div>
 
