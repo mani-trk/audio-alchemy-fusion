@@ -87,13 +87,13 @@ const AudioRemaster = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-10">
+    <div className="max-w-7xl mx-auto space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 border-slate-600/50 backdrop-blur-xl shadow-2xl hover:shadow-purple-500/10 transition-all duration-300">
+        <Card className="bg-slate-800/50 border-slate-600/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-lg">
-                <Upload className="h-6 w-6 text-purple-300" />
+              <div className="p-3 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl shadow-lg">
+                <Upload className="h-6 w-6 text-white" />
               </div>
               Upload Audio File
             </CardTitle>
@@ -103,11 +103,11 @@ const AudioRemaster = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 border-slate-600/50 backdrop-blur-xl shadow-2xl hover:shadow-pink-500/10 transition-all duration-300">
+        <Card className="bg-slate-800/50 border-slate-600/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-pink-500/30 to-purple-500/30 rounded-lg">
-                <Settings className="h-6 w-6 text-pink-300" />
+              <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
+                <Settings className="h-6 w-6 text-white" />
               </div>
               Enhancement Settings
             </CardTitle>
@@ -122,11 +122,11 @@ const AudioRemaster = () => {
       </div>
 
       {audioFile && (
-        <Card className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 border-slate-600/50 backdrop-blur-xl shadow-2xl hover:shadow-blue-500/10 transition-all duration-300">
+        <Card className="bg-slate-800/50 border-slate-600/50 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-lg">
-                <Music className="h-6 w-6 text-blue-300" />
+              <div className="p-3 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl shadow-lg">
+                <Music className="h-6 w-6 text-white" />
               </div>
               Audio Spectrum Analysis
             </CardTitle>
@@ -138,11 +138,11 @@ const AudioRemaster = () => {
       )}
 
       {audioFile && (
-        <Card className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 border-slate-600/50 backdrop-blur-xl shadow-2xl hover:shadow-yellow-500/10 transition-all duration-300">
+        <Card className="bg-slate-800/50 border-slate-600/50 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-yellow-500/30 to-orange-500/30 rounded-lg">
-                <Sparkles className="h-6 w-6 text-yellow-300" />
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg">
+                <Sparkles className="h-6 w-6 text-white" />
               </div>
               AI Remastering Engine
             </CardTitle>
@@ -152,7 +152,7 @@ const AudioRemaster = () => {
               <Button
                 onClick={simulateProcessing}
                 disabled={isProcessing}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-300 text-lg py-6 px-8"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 text-lg py-6 px-8 hover:scale-105"
               >
                 {isProcessing ? (
                   <>
@@ -170,7 +170,7 @@ const AudioRemaster = () => {
               {processedAudio && (
                 <Button
                   onClick={handleDownload}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-green-500/25 transition-all duration-300 text-lg py-6 px-8"
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 text-lg py-6 px-8 hover:scale-105"
                 >
                   <Download className="h-5 w-5 mr-3" />
                   Download Enhanced Audio
@@ -188,18 +188,18 @@ const AudioRemaster = () => {
       )}
 
       {processedAudio && (
-        <Card className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 border-slate-600/50 backdrop-blur-xl shadow-2xl hover:shadow-green-500/10 transition-all duration-300">
+        <Card className="bg-slate-800/50 border-slate-600/50 shadow-xl hover:shadow-2xl transition-all duration-300">
           <CardHeader className="pb-4">
             <CardTitle className="text-white flex items-center gap-3 text-xl">
-              <div className="p-2 bg-gradient-to-br from-green-500/30 to-teal-500/30 rounded-lg">
-                <Headphones className="h-6 w-6 text-green-300" />
+              <div className="p-3 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl shadow-lg">
+                <Headphones className="h-6 w-6 text-white" />
               </div>
               Preview Enhanced Audio
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="p-4 bg-gradient-to-r from-slate-700/50 to-slate-800/50 rounded-xl border border-slate-600/30">
+              <div className="p-6 bg-slate-700/50 rounded-2xl border border-slate-600/30 shadow-lg">
                 <audio controls className="w-full">
                   <source src={processedAudio} type="audio/mpeg" />
                   Your browser does not support the audio element.
@@ -207,21 +207,21 @@ const AudioRemaster = () => {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 p-4 rounded-xl border border-slate-600/30 hover:border-purple-500/30 transition-colors">
-                  <div className="text-purple-400 font-semibold text-sm">Bitrate</div>
-                  <div className="text-white text-lg font-bold">{audioSettings.bitrate} kbps</div>
+                <div className="bg-slate-700/50 p-6 rounded-2xl border border-slate-600/30 hover:border-blue-500/50 transition-all duration-300 hover:scale-105 shadow-lg">
+                  <div className="text-blue-400 font-semibold text-sm mb-1">Bitrate</div>
+                  <div className="text-white text-xl font-bold">{audioSettings.bitrate} kbps</div>
                 </div>
-                <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 p-4 rounded-xl border border-slate-600/30 hover:border-pink-500/30 transition-colors">
-                  <div className="text-pink-400 font-semibold text-sm">Format</div>
-                  <div className="text-white text-lg font-bold uppercase">{audioSettings.format}</div>
+                <div className="bg-slate-700/50 p-6 rounded-2xl border border-slate-600/30 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 shadow-lg">
+                  <div className="text-purple-400 font-semibold text-sm mb-1">Format</div>
+                  <div className="text-white text-xl font-bold uppercase">{audioSettings.format}</div>
                 </div>
-                <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 p-4 rounded-xl border border-slate-600/30 hover:border-green-500/30 transition-colors">
-                  <div className="text-green-400 font-semibold text-sm">Quality</div>
-                  <div className="text-white text-lg font-bold">Studio Grade</div>
+                <div className="bg-slate-700/50 p-6 rounded-2xl border border-slate-600/30 hover:border-emerald-500/50 transition-all duration-300 hover:scale-105 shadow-lg">
+                  <div className="text-emerald-400 font-semibold text-sm mb-1">Quality</div>
+                  <div className="text-white text-xl font-bold">Studio Grade</div>
                 </div>
-                <div className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 p-4 rounded-xl border border-slate-600/30 hover:border-blue-500/30 transition-colors">
-                  <div className="text-blue-400 font-semibold text-sm">Enhancement</div>
-                  <div className="text-white text-lg font-bold">AI Optimized</div>
+                <div className="bg-slate-700/50 p-6 rounded-2xl border border-slate-600/30 hover:border-indigo-500/50 transition-all duration-300 hover:scale-105 shadow-lg">
+                  <div className="text-indigo-400 font-semibold text-sm mb-1">Enhancement</div>
+                  <div className="text-white text-xl font-bold">AI Optimized</div>
                 </div>
               </div>
             </div>
