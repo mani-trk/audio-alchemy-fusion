@@ -37,7 +37,7 @@ const Index = () => {
                 <Music className="h-8 w-8 text-white" />
               </div>
               <h1 className="text-5xl font-bold text-white bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                AI Audio Remaster Pro
+                AudioZen Remaster Pro
               </h1>
               <div className="p-3 bg-gradient-to-br from-pink-500/30 to-purple-500/30 rounded-full backdrop-blur-sm border border-white/20">
                 <Guitar className="h-8 w-8 text-white" />
